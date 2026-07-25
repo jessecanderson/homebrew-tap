@@ -3,11 +3,16 @@ class Cyberdeck < Formula
 
   desc "Neon, keyboard-first TUI for running multiple local coding agents"
   homepage "https://github.com/jessecanderson/cyberdeck"
-  url "https://github.com/jessecanderson/cyberdeck/releases/download/v0.1.0/cyberdeck_tui-0.1.0.tar.gz"
-  sha256 "5659c8998cf4ed67489ca95a0be849ab8375a7d8393122556d0354e93ed5fc68"
+  url "https://github.com/jessecanderson/cyberdeck/releases/download/v0.2.0/cyberdeck_tui-0.2.0.tar.gz"
+  sha256 "bf22bf81c39e07cae0e693234720b77a96fade56489419d0ebdb8fd3f34401c4"
   license "Apache-2.0"
 
   depends_on "python@3.14"
+
+  resource "packaging" do
+    url "https://files.pythonhosted.org/packages/d7/f1/e7a6dd94a8d4a5626c03e4e99c87f241ba9e350cd9e6d75123f992427270/packaging-26.2.tar.gz"
+    sha256 "ff452ff5a3e828ce110190feff1178bb1f2ea2281fa2075aadb987c2fb221661"
+  end
 
   resource "linkify-it-py" do
     url "https://files.pythonhosted.org/packages/2e/c9/06ea13676ef354f0af6169587ae292d3e2406e212876a413bf9eece4eb23/linkify_it_py-2.1.0.tar.gz"
