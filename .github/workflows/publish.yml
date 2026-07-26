@@ -1,42 +1,113 @@
-name: brew pr-pull
+name: Publish Cyberdeck release
 
 on:
-  pull_request_target:
+  repository_dispatch:
     types:
-      - labeled
+      - cyberdeck_release
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Cyberdeck version without the v prefix
+        required: true
+        type: string
+      tag:
+        description: Cyberdeck release tag
+        required: true
+        type: string
+      source_url:
+        description: Published source distribution URL
+        required: true
+        type: string
+      source_sha256:
+        description: Published source distribution SHA-256
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: cyberdeck-${{ github.event.client_payload.version || inputs.version }}
+  cancel-in-progress: false
 
 jobs:
-  pr-pull:
-    if: contains(github.event.pull_request.labels.*.name, 'pr-pull')
+  update-formula:
+    name: Update formula through protected PR
     runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      checks: read
-      contents: write
-      issues: read
-      pull-requests: write
+    env:
+      VERSION: ${{ github.event.client_payload.version || inputs.version }}
+      RELEASE_TAG: ${{ github.event.client_payload.tag || inputs.tag }}
+      SOURCE_URL: ${{ github.event.client_payload.source_url || inputs.source_url }}
+      SOURCE_SHA256: ${{ github.event.client_payload.source_sha256 || inputs.source_sha256 }}
+      GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
     steps:
-      - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@main
+      - uses: actions/checkout@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
-      - name: Set up git
-        uses: Homebrew/actions/git-user-config@main
+      - name: Validate release payload and artifact
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]
+          test "$RELEASE_TAG" = "v$VERSION"
+          [[ "$SOURCE_URL" == "https://github.com/jessecanderson/cyberdeck/releases/download/$RELEASE_TAG/"* ]]
+          [[ "$SOURCE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          curl --fail --location --silent --show-error "$SOURCE_URL" --output "$RUNNER_TEMP/cyberdeck.tar.gz"
+          echo "$SOURCE_SHA256  $RUNNER_TEMP/cyberdeck.tar.gz" | sha256sum --check
 
-      - name: Pull bottles
+      - name: Update formula
         env:
-          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PULL_REQUEST: ${{ github.event.pull_request.number }}
-        run: brew pr-pull --debug --tap="$GITHUB_REPOSITORY" "$PULL_REQUEST"
+          FORMULA_PATH: Formula/cyberdeck.rb
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
 
-      - name: Push commits
-        uses: Homebrew/actions/git-try-push@main
-        with:
-          branch: main
+          path = Path(os.environ["FORMULA_PATH"])
+          text = path.read_text()
+          text, url_count = re.subn(
+              r'^  url "https://github\.com/jessecanderson/cyberdeck/releases/download/[^\"]+"$',
+              f'  url "{os.environ["SOURCE_URL"]}"',
+              text,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          text, sha_count = re.subn(
+              r'^  sha256 "[0-9a-f]{64}"$',
+              f'  sha256 "{os.environ["SOURCE_SHA256"]}"',
+              text,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          if (url_count, sha_count) != (1, 1):
+              raise SystemExit("Cyberdeck formula URL or checksum was not uniquely replaceable")
+          path.write_text(text)
+          PY
 
-      - name: Delete branch
-        if: github.event.pull_request.head.repo.fork == false
-        env:
-          BRANCH: ${{ github.event.pull_request.head.ref }}
-        run: git push --delete origin "$BRANCH"
+      - name: Open formula pull request
+        id: pull-request
+        run: |
+          BRANCH="release/cyberdeck-$VERSION"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --create "$BRANCH"
+          git add Formula/cyberdeck.rb
+          if git diff --cached --quiet; then
+            echo "Formula already targets Cyberdeck $VERSION"
+            exit 0
+          fi
+          git commit -m "cyberdeck $VERSION"
+          git push --set-upstream origin "$BRANCH"
+          PR_URL=$(gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "cyberdeck $VERSION" \
+            --body "Automated formula update for Cyberdeck $RELEASE_TAG. The source archive checksum was verified before this PR was created.")
+          echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
+          gh pr merge "$PR_URL" --auto --squash --delete-branch
+
+      - name: Report pull request
+        if: steps.pull-request.outputs.url
+        run: echo "Homebrew update queued at ${{ steps.pull-request.outputs.url }}"
