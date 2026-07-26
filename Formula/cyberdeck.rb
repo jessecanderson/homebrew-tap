@@ -3,8 +3,8 @@ class Cyberdeck < Formula
 
   desc "Neon, keyboard-first TUI for running multiple local coding agents"
   homepage "https://github.com/jessecanderson/cyberdeck"
-  url "https://github.com/jessecanderson/cyberdeck/releases/download/v0.2.1/cyberdeck_tui-0.2.1.tar.gz"
-  sha256 "5b692b9d7bdd29c3900043923c06cab8dab78c0e6df8ddbf835f46b7c272c77c"
+  url "https://github.com/jessecanderson/cyberdeck/releases/download/v0.3.0/cyberdeck_tui-0.3.0.tar.gz"
+  sha256 "d38fc200912d90c0268676627c5a3424aefde7816ad2f7f207a250a152d15854"
   license "Apache-2.0"
 
   depends_on "python@3.14"
@@ -70,10 +70,12 @@ class Cyberdeck < Formula
 
   def caveats
     <<~EOS
-      Cyberdeck currently requires the Codex CLI as its agent provider.
-      Install and authenticate Codex separately, then verify it with:
+      Cyberdeck requires at least one supported agent CLI. Install and
+      authenticate Codex and/or Kiro separately, then verify with:
         codex --version
         codex login
+        kiro-cli --version
+        kiro-cli login
     EOS
   end
 
