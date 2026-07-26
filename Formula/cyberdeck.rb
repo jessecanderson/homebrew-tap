@@ -3,8 +3,8 @@ class Cyberdeck < Formula
 
   desc "Neon, keyboard-first TUI for running multiple local coding agents"
   homepage "https://github.com/jessecanderson/cyberdeck"
-  url "https://github.com/jessecanderson/cyberdeck/releases/download/v0.2.0/cyberdeck_tui-0.2.0.tar.gz"
-  sha256 "bf22bf81c39e07cae0e693234720b77a96fade56489419d0ebdb8fd3f34401c4"
+  url "https://github.com/jessecanderson/cyberdeck/releases/download/v0.2.1/cyberdeck_tui-0.2.1.tar.gz"
+  sha256 "5b692b9d7bdd29c3900043923c06cab8dab78c0e6df8ddbf835f46b7c272c77c"
   license "Apache-2.0"
 
   depends_on "python@3.14"
