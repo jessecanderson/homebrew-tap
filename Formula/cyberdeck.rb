@@ -11,7 +11,7 @@ class Cyberdeck < Formula
   depends_on macos: :big_sur
 
   def install
-    libexec.install Dir["cyberdeck/*"]
+    libexec.install Dir["*"]
     bin.install_symlink libexec/"cyberdeck-bin/cyberdeck" => "cyberdeck"
   end
 
