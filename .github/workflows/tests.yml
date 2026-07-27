@@ -47,6 +47,7 @@ jobs:
         if: github.event_name == 'pull_request' && matrix.os == 'macos-26' && hashFiles('Casks/cyberdeck.rb') != ''
         run: |
           brew audit --cask --strict cyberdeck
+          brew uninstall --formula cyberdeck || true
           brew install --cask cyberdeck
           cyberdeck --version
 
