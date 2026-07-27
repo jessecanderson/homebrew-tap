@@ -115,7 +115,7 @@ jobs:
             version "{os.environ["VERSION"]}"
             sha256 "{os.environ["MACOS_ARM64_SHA256"]}"
 
-            url "{os.environ["MACOS_ARM64_URL"]}"
+            url "https://github.com/jessecanderson/cyberdeck/releases/download/v#{{version}}/cyberdeck-#{{version}}-macos-arm64.tar.gz"
             name "Cyberdeck"
             desc "Neon, keyboard-first TUI for running multiple local coding agents"
             homepage "https://github.com/jessecanderson/cyberdeck"
