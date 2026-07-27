@@ -22,6 +22,14 @@ on:
         description: Published source distribution SHA-256
         required: true
         type: string
+      macos_arm64_url:
+        description: Published standalone Apple Silicon bundle URL
+        required: true
+        type: string
+      macos_arm64_sha256:
+        description: Published standalone Apple Silicon bundle SHA-256
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -32,14 +40,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  update-formula:
-    name: Update formula through protected PR
+  update-homebrew:
+    name: Update formula and cask through protected PR
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ github.event.client_payload.version || inputs.version }}
       RELEASE_TAG: ${{ github.event.client_payload.tag || inputs.tag }}
       SOURCE_URL: ${{ github.event.client_payload.source_url || inputs.source_url }}
       SOURCE_SHA256: ${{ github.event.client_payload.source_sha256 || inputs.source_sha256 }}
+      MACOS_ARM64_URL: ${{ github.event.client_payload.macos_arm64_url || inputs.macos_arm64_url }}
+      MACOS_ARM64_SHA256: ${{ github.event.client_payload.macos_arm64_sha256 || inputs.macos_arm64_sha256 }}
       GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
     steps:
       - uses: actions/checkout@v7
@@ -53,8 +63,12 @@ jobs:
           test "$RELEASE_TAG" = "v$VERSION"
           [[ "$SOURCE_URL" == "https://github.com/jessecanderson/cyberdeck/releases/download/$RELEASE_TAG/"* ]]
           [[ "$SOURCE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$MACOS_ARM64_URL" == "https://github.com/jessecanderson/cyberdeck/releases/download/$RELEASE_TAG/"* ]]
+          [[ "$MACOS_ARM64_SHA256" =~ ^[0-9a-f]{64}$ ]]
           curl --fail --location --silent --show-error "$SOURCE_URL" --output "$RUNNER_TEMP/cyberdeck.tar.gz"
           echo "$SOURCE_SHA256  $RUNNER_TEMP/cyberdeck.tar.gz" | sha256sum --check
+          curl --fail --location --silent --show-error "$MACOS_ARM64_URL" --output "$RUNNER_TEMP/cyberdeck-macos-arm64.tar.gz"
+          echo "$MACOS_ARM64_SHA256  $RUNNER_TEMP/cyberdeck-macos-arm64.tar.gz" | sha256sum --check
 
       - name: Update formula
         env:
@@ -83,19 +97,51 @@ jobs:
           )
           if (url_count, sha_count) != (1, 1):
               raise SystemExit("Cyberdeck formula URL or checksum was not uniquely replaceable")
+          text = re.sub(r'^  revision \d+\n', '', text, count=1, flags=re.MULTILINE)
           path.write_text(text)
           PY
 
-      - name: Open formula pull request
+      - name: Update Apple Silicon cask
+        env:
+          CASK_PATH: Casks/cyberdeck.rb
+        run: |
+          mkdir -p Casks
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["CASK_PATH"])
+          path.write_text(f'''cask "cyberdeck" do
+            version "{os.environ["VERSION"]}"
+            sha256 "{os.environ["MACOS_ARM64_SHA256"]}"
+
+            url "{os.environ["MACOS_ARM64_URL"]}"
+            name "Cyberdeck"
+            desc "Neon, keyboard-first TUI for running multiple local coding agents"
+            homepage "https://github.com/jessecanderson/cyberdeck"
+
+            depends_on arch: :arm64
+
+            binary "cyberdeck/cyberdeck-bin/cyberdeck"
+
+            caveats <<~EOS
+              Cyberdeck requires at least one supported agent CLI. Install and
+              authenticate Codex and/or Kiro separately.
+            EOS
+          end
+          ''')
+          PY
+
+      - name: Open Homebrew pull request
         id: pull-request
         run: |
           BRANCH="release/cyberdeck-$VERSION"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch --create "$BRANCH"
-          git add Formula/cyberdeck.rb
+          git add Formula/cyberdeck.rb Casks/cyberdeck.rb
           if git diff --cached --quiet; then
-            echo "Formula already targets Cyberdeck $VERSION"
+            echo "Formula and cask already target Cyberdeck $VERSION"
             exit 0
           fi
           git commit -m "cyberdeck $VERSION"
@@ -104,7 +150,7 @@ jobs:
             --base main \
             --head "$BRANCH" \
             --title "cyberdeck $VERSION" \
-            --body "Automated formula update for Cyberdeck $RELEASE_TAG. The source archive checksum was verified before this PR was created.")
+            --body "Automated formula and Apple Silicon cask update for Cyberdeck $RELEASE_TAG. Both published archive checksums were verified before this PR was created.")
           echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
           gh pr merge "$PR_URL" --auto --squash --delete-branch
 
