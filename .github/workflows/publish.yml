@@ -83,14 +83,14 @@ jobs:
           text = path.read_text()
           text, url_count = re.subn(
               r'^  url "https://github\.com/jessecanderson/cyberdeck/releases/download/[^\"]+"$',
-              f'  url "{os.environ["SOURCE_URL"]}"',
+              f'  url "{os.environ["MACOS_ARM64_URL"]}"',
               text,
               count=1,
               flags=re.MULTILINE,
           )
           text, sha_count = re.subn(
               r'^  sha256 "[0-9a-f]{64}"$',
-              f'  sha256 "{os.environ["SOURCE_SHA256"]}"',
+              f'  sha256 "{os.environ["MACOS_ARM64_SHA256"]}"',
               text,
               count=1,
               flags=re.MULTILINE,
