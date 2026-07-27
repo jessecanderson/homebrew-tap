@@ -12,7 +12,7 @@ class Cyberdeck < Formula
 
   def install
     libexec.install Dir["cyberdeck/*"]
-    bin.install_symlink libexec/"cyberdeck/cyberdeck-bin/cyberdeck" => "cyberdeck"
+    bin.install_symlink libexec/"cyberdeck-bin/cyberdeck" => "cyberdeck"
   end
 
   def caveats
