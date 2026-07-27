@@ -6,8 +6,9 @@ class Cyberdeck < Formula
   url "https://github.com/jessecanderson/cyberdeck/releases/download/v0.3.1/cyberdeck_tui-0.3.1.tar.gz"
   sha256 "930f1762f861d2ce8655822a548a40188250761a86560b983568ea8f1afbc7ff"
   license "Apache-2.0"
+  revision 1
 
-  depends_on "python@3.14"
+  depends_on "python@3.12"
 
   resource "packaging" do
     url "https://files.pythonhosted.org/packages/d7/f1/e7a6dd94a8d4a5626c03e4e99c87f241ba9e350cd9e6d75123f992427270/packaging-26.2.tar.gz"
