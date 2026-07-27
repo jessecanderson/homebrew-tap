@@ -5,8 +5,8 @@ class Cyberdeck < Formula
   sha256 "244dd23241605da5ed0b49cbab70c0de0d3807434fdcda0806bea5095b21aba4"
   license "Apache-2.0"
 
-  depends_on macos: :big_sur
   depends_on arch: :arm64
+  depends_on macos: :big_sur
 
   def install
     libexec.install Dir["cyberdeck/*"]
