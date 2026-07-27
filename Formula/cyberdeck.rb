@@ -5,6 +5,7 @@ class Cyberdeck < Formula
   version "0.3.3"
   sha256 "244dd23241605da5ed0b49cbab70c0de0d3807434fdcda0806bea5095b21aba4"
   license "Apache-2.0"
+  version_scheme 1
 
   depends_on arch: :arm64
   depends_on macos: :big_sur
