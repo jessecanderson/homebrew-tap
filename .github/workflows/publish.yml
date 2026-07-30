@@ -41,7 +41,7 @@ concurrency:
 
 jobs:
   update-homebrew:
-    name: Update formula and cask through protected PR
+    name: Update standalone formula through protected PR
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ github.event.client_payload.version || inputs.version }}
@@ -110,46 +110,15 @@ jobs:
           path.write_text(text)
           PY
 
-      - name: Update Apple Silicon cask
-        env:
-          CASK_PATH: Casks/cyberdeck.rb
-        run: |
-          mkdir -p Casks
-          python3 - <<'PY'
-          import os
-          from pathlib import Path
-
-          path = Path(os.environ["CASK_PATH"])
-          path.write_text(f'''cask "cyberdeck" do
-            version "{os.environ["VERSION"]}"
-            sha256 "{os.environ["MACOS_ARM64_SHA256"]}"
-
-            url "https://github.com/jessecanderson/cyberdeck/releases/download/v#{{version}}/cyberdeck-#{{version}}-macos-arm64.tar.gz"
-            name "Cyberdeck"
-            desc "Neon, keyboard-first TUI for running multiple local coding agents"
-            homepage "https://github.com/jessecanderson/cyberdeck"
-
-            depends_on arch: :arm64
-
-            binary "cyberdeck/cyberdeck-bin/cyberdeck"
-
-            caveats <<~EOS
-              Cyberdeck requires at least one supported agent CLI. Install and
-              authenticate Codex and/or Kiro separately.
-            EOS
-          end
-          ''')
-          PY
-
       - name: Open Homebrew pull request
         id: pull-request
         run: |
           BRANCH="release/cyberdeck-$VERSION"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Formula/cyberdeck.rb Casks/cyberdeck.rb
+          git add Formula/cyberdeck.rb
           if git diff --cached --quiet; then
-            echo "Formula and cask already target Cyberdeck $VERSION"
+            echo "Formula already targets Cyberdeck $VERSION"
             exit 0
           fi
           git commit -m "cyberdeck $VERSION"
@@ -160,7 +129,7 @@ jobs:
               --base main \
               --head "$BRANCH" \
               --title "cyberdeck $VERSION" \
-              --body "Automated formula and Apple Silicon cask update for Cyberdeck $RELEASE_TAG. Both published archive checksums were verified before this PR was created.")
+              --body "Automated standalone Apple Silicon formula update for Cyberdeck $RELEASE_TAG. Published source and standalone archive checksums were verified before this PR was created.")
           fi
           echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
           gh pr merge "$PR_URL" --auto --squash --delete-branch
