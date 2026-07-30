@@ -2,13 +2,11 @@
 
 ## How do I install these formulae?
 
-`brew install jessecanderson/tap/<formula>`
-
-Cyberdeck uses a standalone macOS bundle so it does not depend on Homebrew's
-Python runtime:
+The preferred Cyberdeck install uses the standalone Apple Silicon formula. It includes
+an isolated runtime inside Cyberdeck and does not install or modify Homebrew Python:
 
 ```bash
-brew install --cask jessecanderson/tap/cyberdeck
+brew install jessecanderson/tap/cyberdeck
 ```
 
 Or `brew tap jessecanderson/tap` and then `brew install <formula>`.
@@ -24,8 +22,8 @@ brew "<formula>"
 
 `brew help`, `man brew` or check [Homebrew's documentation](https://docs.brew.sh).
 
-Cyberdeck formula and cask updates are dispatched automatically after a tagged
-release. The tap verifies the published source and standalone macOS checksums,
+Cyberdeck formula updates are dispatched automatically after a tagged release. The
+tap verifies the published source and standalone macOS checksums,
 opens a protected pull request, runs Homebrew validation, and enables auto-merge
 only after all required checks pass.
 
