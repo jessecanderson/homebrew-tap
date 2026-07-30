@@ -57,6 +57,15 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
+      - name: Prepare idempotent release branch
+        run: |
+          BRANCH="release/cyberdeck-$VERSION"
+          if git show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
+            git switch --track "origin/$BRANCH"
+          else
+            git switch --create "$BRANCH"
+          fi
+
       - name: Validate release payload and artifact
         run: |
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]
@@ -138,7 +147,6 @@ jobs:
           BRANCH="release/cyberdeck-$VERSION"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch --create "$BRANCH"
           git add Formula/cyberdeck.rb Casks/cyberdeck.rb
           if git diff --cached --quiet; then
             echo "Formula and cask already target Cyberdeck $VERSION"
@@ -146,11 +154,14 @@ jobs:
           fi
           git commit -m "cyberdeck $VERSION"
           git push --set-upstream origin "$BRANCH"
-          PR_URL=$(gh pr create \
-            --base main \
-            --head "$BRANCH" \
-            --title "cyberdeck $VERSION" \
-            --body "Automated formula and Apple Silicon cask update for Cyberdeck $RELEASE_TAG. Both published archive checksums were verified before this PR was created.")
+          PR_URL=$(gh pr list --head "$BRANCH" --state open --json url --jq '.[0].url')
+          if [[ -z "$PR_URL" ]]; then
+            PR_URL=$(gh pr create \
+              --base main \
+              --head "$BRANCH" \
+              --title "cyberdeck $VERSION" \
+              --body "Automated formula and Apple Silicon cask update for Cyberdeck $RELEASE_TAG. Both published archive checksums were verified before this PR was created.")
+          fi
           echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
           gh pr merge "$PR_URL" --auto --squash --delete-branch
 
