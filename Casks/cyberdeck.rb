@@ -1,6 +1,6 @@
 cask "cyberdeck" do
-  version "0.3.3"
-  sha256 "244dd23241605da5ed0b49cbab70c0de0d3807434fdcda0806bea5095b21aba4"
+  version "0.3.4"
+  sha256 "19d6d054db226a86cb1f7acc3e00ec422cafec5efbb5391486307924ffb0b260"
 
   url "https://github.com/jessecanderson/cyberdeck/releases/download/v#{version}/cyberdeck-#{version}-macos-arm64.tar.gz"
   name "Cyberdeck"
