@@ -43,6 +43,17 @@ jobs:
       - run: brew test-bot --only-formulae
         if: github.event_name == 'pull_request'
 
+      # test-bot may report a formula build failure as a warning while returning
+      # success. Exercise the public install path explicitly so branch protection
+      # cannot merge a release formula that did not install.
+      - name: Install and test Cyberdeck formula
+        if: github.event_name == 'pull_request' && hashFiles('Formula/cyberdeck.rb') != ''
+        run: |
+          brew uninstall --formula cyberdeck || true
+          brew install --formula cyberdeck
+          brew test cyberdeck
+          cyberdeck --version
+
       - name: Audit and install Apple Silicon cask
         if: github.event_name == 'pull_request' && matrix.os == 'macos-26' && hashFiles('Casks/cyberdeck.rb') != ''
         run: |
