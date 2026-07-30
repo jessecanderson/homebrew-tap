@@ -50,7 +50,7 @@ jobs:
         if: github.event_name == 'pull_request' && hashFiles('Formula/cyberdeck.rb') != ''
         run: |
           brew uninstall --formula cyberdeck || true
-          brew install --formula cyberdeck
+          brew install --formula --build-from-source cyberdeck
           brew test cyberdeck
           cyberdeck --version
 
