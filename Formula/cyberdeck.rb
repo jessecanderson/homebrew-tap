@@ -11,7 +11,7 @@ class Cyberdeck < Formula
   def install
     odie "Cyberdeck's standalone Homebrew build requires Apple Silicon" unless Hardware::CPU.arm?
 
-    libexec.install Dir["cyberdeck/*"]
+    libexec.install Dir["*"]
     bin.install_symlink libexec/"cyberdeck-bin/cyberdeck"
   end
 
